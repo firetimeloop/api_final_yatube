@@ -23,13 +23,11 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
     def get_queryset(self):
-        if self.request.query_params.get('group'):
-            posts = Post.objects.filter(
-                group=self.request.query_params.get('group')
-            )
-            return posts
-        else:
-            return Post.objects.all()
+        queryset = Post.objects.all()
+        group = self.request.query_params.get('group', None)
+        if group is not None:
+            queryset = queryset.filter(group=group)
+        return queryset
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -56,31 +54,17 @@ class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [
-        IsOwnerOrReadOnly,
         IsAuthenticatedOrReadOnly,
     ]
-
-    def perform_create(self, serializer):
-        serializer.save(title=self.request.data.get('title'))
-
-    def perform_update(self, serializer):
-        serializer.save(title=self.request.data.get('title'))
 
 
 class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer
     permission_classes = [
         IsAuthenticated,
-        IsOwnerOrReadOnly,
     ]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['user__username', 'following__username']
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def perform_update(self, serializer):
-        serializer.save(user=self.request.user)
+    search_fields = ['=user__username', '=following__username']
 
     def get_queryset(self):
         return self.request.user.following
