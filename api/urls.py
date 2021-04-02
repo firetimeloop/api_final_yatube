@@ -22,5 +22,5 @@ token_paths = [
 
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
-    path('token/', include(token_paths)),
+    path('v1/token/', include(token_paths)),
 ]

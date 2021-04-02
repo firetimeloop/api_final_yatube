@@ -1,4 +1,5 @@
-from rest_framework import filters, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
@@ -15,6 +16,8 @@ class PostViewSet(viewsets.ModelViewSet):
         IsOwnerOrReadOnly,
         IsAuthenticatedOrReadOnly,
     ]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['group', ]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -23,11 +26,7 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
     def get_queryset(self):
-        queryset = Post.objects.all()
-        group = self.request.query_params.get('group', None)
-        if group is not None:
-            queryset = queryset.filter(group=group)
-        return queryset
+        return Post.objects.all()
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -50,12 +49,12 @@ class CommentViewSet(viewsets.ModelViewSet):
         return post.comments
 
 
-class GroupViewSet(viewsets.ModelViewSet):
+class GroupViewSet(mixins.CreateModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.ListModelMixin,
+                   viewsets.GenericViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = [
-        IsAuthenticatedOrReadOnly,
-    ]
 
 
 class FollowViewSet(viewsets.ModelViewSet):
