@@ -16,8 +16,8 @@ class PostViewSet(viewsets.ModelViewSet):
         IsOwnerOrReadOnly,
         IsAuthenticatedOrReadOnly,
     ]
-    filter_backends = [DjangoFilterBackend]
     filterset_fields = ['group', ]
+    queryset = Post.objects.all()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -25,8 +25,7 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(author=self.request.user)
 
-    def get_queryset(self):
-        return Post.objects.all()
+
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -50,20 +49,22 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class GroupViewSet(mixins.CreateModelMixin,
-                   mixins.RetrieveModelMixin,
                    mixins.ListModelMixin,
                    viewsets.GenericViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class FollowViewSet(mixins.CreateModelMixin,
+                   mixins.ListModelMixin,
+                   viewsets.GenericViewSet):
     serializer_class = FollowSerializer
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsAuthenticated,]
     filter_backends = [filters.SearchFilter]
     search_fields = ['=user__username', '=following__username']
+
+    def perform_create(self, serializer):
+        return serializer.save(user=self.request.user)
 
     def get_queryset(self):
         return self.request.user.following

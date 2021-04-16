@@ -2,7 +2,7 @@ import uuid
 
 from django.contrib.auth import get_user_model
 from django.db import models
-# from django.db.models import F, Q
+from django.db.models import F, Q
 
 User = get_user_model()
 
@@ -51,12 +51,10 @@ class Group(models.Model):
 class Follow(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
-        null=True,
         related_name='follower'
     )
     following = models.ForeignKey(
         User, on_delete=models.CASCADE,
-        default=None,
         related_name='following'
     )
 
@@ -66,13 +64,8 @@ class Follow(models.Model):
                 fields=['user', 'following'],
                 name='user_follow_uniq',
             ),
-            # Валится на этапе миграций,
-            # миграции пришлось почистить - сломались раньше,
-            # ничего не придумал, в check должно быть Q,
-            # а обычное усовие F('user')!=F('following') нельзя
-
-            # models.CheckConstraint(
-            #     check=~Q(user__id=F('following')),
-            #     name='user_not_followed_themself'
-            # )
+            models.CheckConstraint(
+                check=~Q(user=F('following')),
+                name='user_not_followed_themself'
+            )
         ]
